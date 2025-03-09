@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <head>
+        <title>B.LIPIKA- Reminder App</title> <!-- Change 'Your Name' to your actual name -->
+    </head>
+    
+    <style>
+        body {
+            background: linear-gradient(to bottom, rgb(200, 200, 205), rgb(28, 28, 83));
+            height: 100vh;
+            display: grid;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+        }
+        .container {
+            position: relative;
+            max-width: 500px;
+            margin: auto;
+            background-color: rgb(120, 120, 130);
+            padding: 20px;
+            border-radius: 10%;
+            box-shadow: 0 0 10px rgba(4, 205, 240, 0.3);
+        }
+        label, input, button {
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        input {
+            width: 100%;
+            margin-top: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 5px;
+            border: 1px solid white;
+            text-align: center;
+        }
+        th {
+            background-color: rgb(46, 63, 46);
+            color: white;
+        }
+        button {
+            background-color: rgb(85, 85, 23);
+            color: white;
+            padding: 5px;
+            border: none;
+        }
+        button:hover {
+            background-color: rgb(4, 111, 4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 style="text-align:center">Reminder</h2>
+        <label for="title">Title :</label>
+        <input type="text" id="title" />
+        <label for="description">Description :</label>
+        <input type="text" id="description" />
+        <label for="date">Date :</label>
+        <input type="date" id="date" />
+        <label for="time">Time :</label>
+        <input type="time" id="time" />
+        <button style="width: 100%" onclick="scheduleReminder();">
+            Schedule Reminder
+        </button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Date & Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="reminderTableBody"></tbody>
+        </table>
+    </div>
+    <audio src="short-beep-countdown-81121 (1).mp3" id="notificationSound" loop></audio>
+    <script>
+        if ("Notification" in window) {
+            Notification.requestPermission().then(function(permission) {
+                if (permission !== "granted") {
+                    alert("Please allow notification access!");
+                }
+            });
+        }
+
+        var timeoutIds = [];
+        var sound = document.getElementById("notificationSound");
+
+        function scheduleReminder() {
+            var title = document.getElementById("title").value;
+            var description = document.getElementById("description").value;
+            var date = document.getElementById("date").value;
+            var time = document.getElementById("time").value;
+
+            if (!title || !description || !date || !time) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            var dateTimeString = date + "T" + time;
+            var scheduledTime = new Date(dateTimeString);
+            var currentTime = new Date();
+            var timeDifference = scheduledTime - currentTime;
+
+            if (timeDifference > 0) {
+                addReminder(title, description, dateTimeString);
+
+                var timeoutId = setTimeout(function() {
+                    sound.play(); // Start sound in loop
+                    var notification = new Notification(title, {
+                        body: description,
+                        requireInteraction: true,
+                    });
+
+                    notification.onclick = function() {
+                        sound.pause(); // Stop sound
+                        sound.currentTime = 0; // Reset sound position
+                        notification.close();
+                    };
+                }, timeDifference);
+
+                timeoutIds.push(timeoutId);
+            } else {
+                alert("The scheduled time is in the past!");
+            }
+        }
+
+        function addReminder(title, description, dateTimeString) {
+            var tableBody = document.getElementById("reminderTableBody");
+            var row = tableBody.insertRow();
+
+            var titleCell = row.insertCell(0);
+            var descriptionCell = row.insertCell(1);
+            var dateTimeCell = row.insertCell(2);
+            var actionCell = row.insertCell(3);
+
+            titleCell.innerHTML = title;
+            descriptionCell.innerHTML = description;
+            dateTimeCell.innerHTML = dateTimeString;
+            actionCell.innerHTML = '<button onclick="deleteReminder(this);">Delete</button>';
+        }
+
+        function deleteReminder(button) {
+            var row = button.closest("tr");
+            var index = row.rowIndex - 1;
+
+            clearTimeout(timeoutIds[index]);
+            timeoutIds.splice(index, 1);
+            row.remove();
+        }
+    </script>
+</body>
+</html>
